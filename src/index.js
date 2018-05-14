@@ -1,13 +1,16 @@
-import * as tf from '@tensorflow/tfjs';
+// const tf = require('@tensorflow/tfjs')
+// require('@tensorflow/tfjs-node')
+// tf.setBackend('tensorflow')
+global.fetch = require('node-fetch')
 
-import {
+const {
   non_max_suppression,
   yolo_boxes_to_corners,
   yolo_head,
   yolo_filter_boxes,
   YOLO_ANCHORS,
-} from './postprocess';
-import class_names from './coco_classes';
+} = require('./postprocess')
+const class_names = require('./coco_classes')
 
 const INPUT_DIM = 416;
 
@@ -17,11 +20,11 @@ const DEFAULT_CLASS_PROB_THRESHOLD = 0.4
 const DEFAULT_MODEL_LOCATION =
   'https://raw.githubusercontent.com/MikeShi42/yolo-tiny-tfjs/master/model2.json';
 
-export async function downloadModel(url = DEFAULT_MODEL_LOCATION) {
+async function downloadModel(url = DEFAULT_MODEL_LOCATION) {
   return await tf.loadModel(url);
 }
 
-export default async function yolo(
+async function yolo(
   input,
   model,
   classProbThreshold = DEFAULT_CLASS_PROB_THRESHOLD,
@@ -95,4 +98,9 @@ export default async function yolo(
   });
 
   return results;
+}
+
+module.exports = {
+  downloadModel,
+  yolo,
 }
