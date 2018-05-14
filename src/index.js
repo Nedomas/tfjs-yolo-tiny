@@ -1,7 +1,35 @@
 // const tf = require('@tensorflow/tfjs')
 // require('@tensorflow/tfjs-node')
 // tf.setBackend('tensorflow')
-global.fetch = require('node-fetch')
+const fs = require('fs');
+const nodeFetch = require('node-fetch')
+const Request = nodeFetch.Request;
+const Response = nodeFetch.Response;
+
+global.fetch = function (url, options) {
+  const request = new Request(url, options);
+  if (request.url.substring(0, 5) === 'file:') {
+    return new Promise((resolve, reject) => {
+      const filePath = path.normalize(url.substring('file:///'.length));
+      if (!fs.existsSync(filePath)) {
+        reject(`File not found: ${filePath}`);
+      }
+      const readStream = fs.createReadStream(filePath);
+      readStream.on('open', function () {
+        resolve(new Response(readStream, {
+          url: request.url,
+          status: 200,
+          statusText: 'OK',
+          size: fs.statSync(filePath).size,
+          timeout: request.timeout
+        }));
+      });
+    });
+  } else {
+    return nodeFetch(url, options);
+  }
+};
+const path = require('path')
 
 const {
   non_max_suppression,
@@ -17,8 +45,7 @@ const INPUT_DIM = 416;
 const DEFAULT_FILTER_BOXES_THRESHOLD = 0.01;
 const DEFAULT_IOU_THRESHOLD = 0.4;
 const DEFAULT_CLASS_PROB_THRESHOLD = 0.4
-const DEFAULT_MODEL_LOCATION =
-  'https://raw.githubusercontent.com/MikeShi42/yolo-tiny-tfjs/master/model2.json';
+const DEFAULT_MODEL_LOCATION = `file:///${__dirname}/models/model2.json`;
 
 async function downloadModel(url = DEFAULT_MODEL_LOCATION) {
   return await tf.loadModel(url);
